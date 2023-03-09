@@ -1,4 +1,0 @@
-#ifndef hhAnalysis_bbww_setgematchingFlag_h
-#define hhAnalysis_bbww_setgematchingFlag_h
-
-#include "tthAnalysis/HiggsToTauTau/interface/GenParticle.h"
