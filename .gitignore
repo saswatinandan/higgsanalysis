@@ -13,3 +13,4 @@ __pycache__
 *.includes
 *.pyc
 *~
+analyze*cfg.py*
