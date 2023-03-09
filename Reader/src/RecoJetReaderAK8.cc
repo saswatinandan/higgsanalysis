@@ -104,6 +104,8 @@ RecoJetReaderAK8::setBranchNames()
     branchName_electronIdx3SJ_ = Form("%s_%s", branchName_obj_.data(), "electronIdx3SJ");
     branchName_btagDeepB_ = Form("%s_%s", branchName_obj_.data(), "btagDeepB");
     branchName_btagDDBvLV2_ = Form("%s_%s", branchName_obj_.data(), "btagDDBvLV2");
+    branchName_deepTagMD_bbvsLight_ = Form("%s_%s", branchName_obj_.data(), "deepTagMD_bbvsLight");
+    branchName_particleNetMD_Xbb_ = Form("%s_%s", branchName_obj_.data(), "particleNetMD_Xbb");
     instances_[branchName_obj_] = this;
   }
   else
@@ -151,6 +153,8 @@ RecoJetReaderAK8::setBranchAddresses(TTree * tree)
     bai.setBranchAddress(jet_electronIdx3SJ_, branchName_electronIdx3SJ_);
     bai.setBranchAddress(jet_btagDeepB_, branchName_btagDeepB_);
     bai.setBranchAddress(jet_btagDDBvLV2_, branchName_btagDDBvLV2_);
+    bai.setBranchAddress(jet_deepTagMD_bbvsLight_, branchName_deepTagMD_bbvsLight_);
+    bai.setBranchAddress(jet_particleNetMD_Xbb_, branchName_particleNetMD_Xbb_);
 
     const std::vector<std::string> recoFatJetBranches = bai.getBoundBranchNames();
     bound_branches.insert(bound_branches.end(), recoFatJetBranches.begin(), recoFatJetBranches.end());
@@ -226,6 +230,8 @@ RecoJetReaderAK8::read() const
         gInstance->jet_electronIdx3SJ_[idxJet],
         gInstance->jet_btagDeepB_[idxJet],
         gInstance->jet_btagDDBvLV2_[idxJet],
+        gInstance->jet_deepTagMD_bbvsLight_[idxJet],
+        gInstance->jet_particleNetMD_Xbb_[idxJet],
         static_cast<UInt_t>(idxJet),
       });
     } // idxJet

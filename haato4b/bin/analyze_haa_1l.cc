@@ -46,7 +46,8 @@
 #include "higgsanalysis/Selector/interface/RecoJetCollectionSelector.h" // RecoJetCollectionSelector
 #include "higgsanalysis/Selector/interface/RecoJetCollectionSelectorBtag.h" // RecoJetCollectionSelectorBtagLoose, RecoJetCollectionSelectorBtagMedium
 #include "higgsanalysis/Selector/interface/RunLumiEventSelector.h" // RunLumiEventSelector
-#include "higgsanalysis/CommonTools/interface/CutFlowTableHistManager.h" // CutFlowTableHistManager
+#include "higgsanalysis/HistManager/interface/CutFlowTableHistManager.h" // CutFlowTableHistManager
+#include "higgsanalysis/HistManager/interface/JetHistManagerAK8.h" // JetHistManagerAK8
 //#include "/interface/WeightHistManager.h" // WeightHistManager
 #include "higgsanalysis/CommonTools/interface/leptonTypes.h" // getLeptonType, kElectron, kMuon
 #include "higgsanalysis/Objects/interface/analysisAuxFunctions.h" // getBTagWeight_option, getHadTau_genPdgId, isHigherPt, isMatched, pileupJetID
@@ -305,6 +306,10 @@ int main(int argc, char* argv[])
   CutFlowTableHistManager * cutFlowHistManager = new CutFlowTableHistManager(cutFlowTableCfg, cuts);
   cutFlowHistManager->bookHistograms(fs);
 
+  JetHistManagerAK8* jetHistManagerAK8_;
+  jetHistManagerAK8_ = new JetHistManagerAK8(makeHistManager_cfg(process_string,
+       Form("%s/sel/jetsAK8", histogramDir.data()), era_string, "central", "allHistograms"));
+  jetHistManagerAK8_->bookHistograms(fs);
   const edm::ParameterSet cutFlowTableCfg_AK8 = makeHistManager_cfg(
         process_string, Form("%s/sel/cutFlowAK8", histogramDir.data()), era_string, 
         central_or_shift_main
@@ -533,7 +538,7 @@ int main(int argc, char* argv[])
     if ( !(selJetsAK8.size() >=1) ) continue;
     cutFlowTable.update(">= 1 AK8 jets from H->aa->4b", 1);
     cutFlowHistManager->fillHistograms(">= 1 AK8 jets from H->aa->4b", 1);
-
+    jetHistManagerAK8_->fillHistograms(selJetsAK8,1);
     histogram_selectedEntries->Fill(0.);
   }
   std::cout << "max num. Entries = " << inputTree -> getCumulativeMaxEventCount()
@@ -555,6 +560,7 @@ int main(int argc, char* argv[])
   delete run_lumi_eventSelector;
   delete muonReader;
   delete electronReader;
+  delete jetHistManagerAK8_;
 //delete jetReaderAK4;
 // delete jetReaderAK8;
 //delete metReader;

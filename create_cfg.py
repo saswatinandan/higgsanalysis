@@ -23,7 +23,7 @@ def create_cfg(cfg_file_original, cfg_file_modified, lines):
     f_modified.write(cfg_modified)
     f_modified.close()
 
-for m in [12,20,25]:#, 12,20,25,30,35,40,45]:#,30,35, 60,55,50]: for 60, WH sample assert error for b size 5
+for m in [12,20,25,30,35,40,45, 50, 55, 60]: #for 60, WH sample assert error for b size 5
     if input_sample == 'WH':
         input_path = '/store/mc/RunIISummer20UL18NanoAODv9/SUSY_WH_WToAll_HToAATo4B_Pt150_M-%s_TuneCP5_13TeV_madgraph_pythia8/NANOAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/' %m
     elif input_sample == 'ZH':

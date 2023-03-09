@@ -17,6 +17,8 @@ RecoJetAK8::RecoJetAK8(const GenJet & jet,
                        Int_t electronIdx3SJ,
                        Float_t btagDeepB,
                        Float_t btagDDBvLV2,
+                       Float_t deepTagMD_bbvsLight,
+                       Float_t particleNetMD_Xbb,
                        UInt_t idx)
   : RecoJetBase(jet, rawFactor, idx)
   , msoftdrop_(msoftdrop)
@@ -34,6 +36,8 @@ RecoJetAK8::RecoJetAK8(const GenJet & jet,
   , electronIdx3SJ_(electronIdx3SJ)
   , btagDeepB_(btagDeepB)
   , btagDDBvLV2_(btagDDBvLV2)
+  , deepTagMD_bbvsLight_(deepTagMD_bbvsLight)
+  , particleNetMD_Xbb_(particleNetMD_Xbb)
   , genmatchFlag_(false)
 {}
 
@@ -140,6 +144,18 @@ Float_t
 RecoJetAK8::btagDeepB() const
 {
   return btagDeepB_;
+}
+
+Float_t
+RecoJetAK8::deepTagMD_bbvsLight() const
+{
+  return deepTagMD_bbvsLight_;
+}
+
+Float_t
+RecoJetAK8::particleNetMD_Xbb() const
+{
+  return particleNetMD_Xbb_;
 }
 
 Float_t

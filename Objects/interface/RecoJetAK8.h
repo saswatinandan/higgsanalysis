@@ -37,6 +37,8 @@ class RecoJetAK8
              Int_t electronIdx3SJ,
              Float_t btagDeepB,
              Float_t btagDDBvLV2,
+             Float_t deepTagMD_bbvsLight,
+             Float_t particleNetMD_Xbb,
              UInt_t idx);
 
   virtual ~RecoJetAK8();
@@ -63,6 +65,8 @@ class RecoJetAK8
   Int_t electronIdx3SJ() const;
   Float_t btagDeepB() const;
   Float_t btagDDBvLV2() const;
+  Float_t deepTagMD_bbvsLight() const;
+  Float_t particleNetMD_Xbb() const;
   Int_t get_default_systematics() const;
   Int_t get_ignored_corrections() const;
   void setgenmatchFlag();
@@ -87,6 +91,8 @@ class RecoJetAK8
   Int_t electronIdx3SJ_;
   Float_t btagDeepB_;
   Float_t btagDDBvLV2_;
+  Float_t deepTagMD_bbvsLight_;
+  Float_t particleNetMD_Xbb_;
   bool genmatchFlag_;
 };
 

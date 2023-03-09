@@ -1,5 +1,5 @@
 #include "higgsanalysis/Selector/interface/RecoJetCollectionSelectorAK8.h" // RecoJetSelectorAK8
-#include "higgsanalysis/CommonTools/interface/CutFlowTableHistManager.h"
+#include "higgsanalysis/HistManager/interface/CutFlowTableHistManager.h"
 #include "higgsanalysis/Objects/interface/analysisAuxFunctions.h"
 
 RecoJetSelectorAK8::RecoJetSelectorAK8(Era era,
@@ -63,7 +63,7 @@ RecoJetSelectorAK8::operator()(const RecoJetAK8 & jet) const
   if(cutflow_) cutflow_->fillHistograms("eta<maxeta", 1);
   if (!(jet.msoftdrop() >= min_msoftdrop_)) return false;
   if(cutflow_)cutflow_->fillHistograms("softdrop",1);
-  if (!(jet.btagDDBvLV2() > 0.80)) return false;
+  //if (!(jet.btagDDBvLV2() > 0.80)) return false;
   if(cutflow_)cutflow_->fillHistograms("btag",1);
   /*  if (!passes) {
     std::cout << "pt: " << jet.pt();

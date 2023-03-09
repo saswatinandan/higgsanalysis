@@ -4,7 +4,7 @@
 #include "higgsanalysis/Selector/interface/ParticleCollectionSelector.h" // ParticleCollectionSelector
 #include "higgsanalysis/Objects/interface/RecoJetAK8.h"                 // RecoJetAK8
 #include "higgsanalysis/Objects/interface/analysisAuxFunctions.h"       // Era
-#include "higgsanalysis/CommonTools/interface/CutFlowTableHistManager.h"
+#include "higgsanalysis/HistManager/interface/CutFlowTableHistManager.h"
 
 class RecoJetSelectorAK8
 {

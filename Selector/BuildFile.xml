@@ -2,6 +2,7 @@
 <use   name="FWCore/Utilities"/>
 <use   name="higgsanalysis/CommonTools"/>
 <use   name="higgsanalysis/Objects"/>
+<use   name="higgsanalysis/HistManager"/>
 <use   name="boost" />
 <use   name="root"/>
 <use   name="roottmva"/>
