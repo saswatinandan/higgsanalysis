@@ -1,0 +1,100 @@
+#ifndef RecoJetAK8_h
+#define RecoJetAK8_h
+
+/** \class RecoJetAK8
+ *
+ * Class to access information for jets reconstructed by the anti-kT algorithm with R=1.2 (AK8),
+ * used for reconstruction of boosted W bosons (produced in hadronic top decays with resolved b-jets)
+ *
+ * \author Christian Veelken, Tallin
+ *
+ */
+
+#include "higgsanalysis/Objects/interface/RecoJetBase.h" // RecoJetBase
+#include "higgsanalysis/Objects/interface/RecoSubjetAK8.h" // RecoSubjetAK8 
+#include <memory>                                                  // std::shared_ptr
+#include <map>                                                     // std::map
+
+class RecoJetAK8
+  : public RecoJetBase
+{
+ public:
+  RecoJetAK8() = default;
+  RecoJetAK8(const GenJet & particle,
+             Float_t msoftdrop,
+             const RecoSubjetAK8* subJet1,
+             const RecoSubjetAK8* subJet2,
+             Float_t tau1,
+             Float_t tau2,
+             Float_t tau3,
+             Float_t tau4,
+             Int_t jetId,
+             Float_t rawFactor,
+             Float_t area,
+             Int_t genJetAK8Idx,
+             Float_t lsf3,
+             Int_t muonIdx3SJ,
+             Int_t electronIdx3SJ,
+             Float_t btagDeepB,
+             Float_t btagDDBvLV2,
+             UInt_t idx);
+
+  virtual ~RecoJetAK8();
+
+  void
+  set_msoftdrop(double msoftdrop);
+
+  /**
+   * @brief Funtions to access data-members
+   * @return Values of data-members
+   */
+  Float_t msoftdrop() const;
+  const RecoSubjetAK8* subJet1() const;
+  const RecoSubjetAK8* subJet2() const;
+  Float_t tau1() const;
+  Float_t tau2() const;
+  Float_t tau3() const;
+  Float_t tau4() const;
+  Int_t jetId() const;
+  Float_t area() const;
+  Int_t genJetAK8Idx() const;
+  Float_t lsf3() const;
+  Int_t muonIdx3SJ() const;
+  Int_t electronIdx3SJ() const;
+  Float_t btagDeepB() const;
+  Float_t btagDDBvLV2() const;
+  Int_t get_default_systematics() const;
+  Int_t get_ignored_corrections() const;
+  void setgenmatchFlag();
+  bool getgenmatchFlag() const;
+
+  friend class RecoJetReaderAK8;
+  friend class RecoJetWriterAK8;
+
+ protected: 
+  Float_t msoftdrop_;
+  std::shared_ptr<const RecoSubjetAK8> subJet1_;
+  std::shared_ptr<const RecoSubjetAK8> subJet2_;
+  Float_t tau1_;
+  Float_t tau2_;
+  Float_t tau3_;
+  Float_t tau4_;
+  Int_t jetId_;     ///< jet ID, as explained in https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2017
+  Float_t area_;    ///< jet catchment area
+  Int_t genJetAK8Idx_;
+  Float_t lsf3_;
+  Int_t muonIdx3SJ_;
+  Int_t electronIdx3SJ_;
+  Float_t btagDeepB_;
+  Float_t btagDDBvLV2_;
+  bool genmatchFlag_;
+};
+
+typedef std::vector<RecoJetAK8> RecoJetCollectionAK8;
+typedef std::vector<const RecoJetAK8*> RecoJetPtrCollectionAK8;
+
+std::ostream &
+operator<<(std::ostream & stream,
+           const RecoJetAK8 & jet);
+
+#endif // tthAnalysis_HiggsToTauTau_RecoJetAK8_h

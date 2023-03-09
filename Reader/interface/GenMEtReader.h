@@ -1,0 +1,59 @@
+#ifndef GenMEtReader_h
+#define GenMEtReader_h
+
+#include "higgsanalysis/Reader/interface/ReaderBase.h"           // ReaderBase
+#include "higgsanalysis/Objects/interface/GenMEt.h"               // GenMEt
+#include "higgsanalysis/CommonTools/interface/Era.h" // Era
+
+#include <map> // std::map<,>
+
+// forward declarations
+class TTree;
+
+class GenMEtReader
+: public ReaderBase
+{
+ public:
+  GenMEtReader(Era era,
+               bool isMC);
+  GenMEtReader(Era era,
+               bool isMC,
+               const std::string & branchName_obj);
+  ~GenMEtReader();
+
+  /**
+   * @brief Call tree->SetBranchAddress for all RecoMEt branches
+   */
+  std::vector<std::string>
+  setBranchAddresses(TTree * tree) override;
+
+  /**
+   * @brief Read branches from tree and use information to fill RecoMEt object
+   * @return RecoMEt object
+   */
+  GenMEt
+  read() const;
+
+protected:
+  /**
+   * @brief Initialize names of branches to be read from tree
+   */
+  void
+  setBranchNames();
+
+  Era era_;
+  bool isMC_;
+  std::string branchName_obj_;
+
+  std::string branchName_pt_;
+  std::string branchName_phi_;
+
+  GenMEt met_;
+
+  // CV: make sure that only one GenMEtReader instance exists for a given branchName,
+  //     as ROOT cannot handle multiple TTree::SetBranchAddress calls for the same branch.
+  static std::map<std::string, int> numInstances_;
+  static std::map<std::string, GenMEtReader *> instances_;
+};
+
+#endif // GenMEtReader_h  

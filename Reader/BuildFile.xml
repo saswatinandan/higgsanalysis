@@ -1,0 +1,10 @@
+<use   name="FWCore/ParameterSet"/>
+<use   name="higgsanalysis/CommonTools"/>
+<use   name="higgsanalysis/Objects"/>
+<use   name="boost" />
+<use   name="root"/>
+<use   name="roottmva"/>
+<Flags CXXFLAGS="-O3 -fPIC -Wswitch -Wswitch-enum -Werror -Wshadow -Wno-reorder -Wno-error=bool-compare -Wall -Wextra" />
+<export>
+  <lib   name="1"/>
+</export>

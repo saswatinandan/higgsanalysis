@@ -1,0 +1,15 @@
+<bin file="analyze_haa_1l.cc" name="analyze_haa_1l">
+  <use   name="DataFormats/FWLite"/>
+  <use   name="FWCore/FWLite"/>
+  <use   name="FWCore/ParameterSet"/>
+  <use   name="FWCore/ParameterSetReader"/>
+  <use   name="FWCore/PluginManager"/>
+  <use   name="FWCore/Utilities"/>
+  <use   name="PhysicsTools/FWLite"/>
+  <use   name="higgsanalysis/CommonTools"/>
+  <use   name="higgsanalysis/Objects"/>
+  <use   name="higgsanalysis/Reader"/>
+  <use   name="higgsanalysis/Selectors"/>
+  <use   name="root"/>
+  <Flags CXXFLAGS="-O3 -fPIC -Wswitch -Wswitch-enum -Werror -Wshadow -Wno-reorder -Wno-error=bool-compare -Wall -Wextra" />
+</bin>

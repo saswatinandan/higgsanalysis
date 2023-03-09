@@ -1,0 +1,568 @@
+#include "FWCore/ParameterSet/interface/ParameterSet.h" // edm::ParameterSet
+#include "FWCore/Utilities/interface/Exception.h" // cms::Exception
+#include "PhysicsTools/FWLite/interface/TFileService.h" // fwlite::TFileService
+#include "DataFormats/FWLite/interface/InputSource.h" // fwlite::InputSource
+#include "DataFormats/FWLite/interface/OutputFiles.h" // fwlite::OutputFiles
+#include "DataFormats/Math/interface/LorentzVector.h" // math::PtEtaPhiMLorentzVector, math::XYZTLorentzVectorD
+#include "DataFormats/Math/interface/deltaR.h" // deltaR
+#include "DataFormats/Math/interface/deltaPhi.h" // deltaPhi
+
+#if __has_include (<FWCore/ParameterSetReader/interface/ParameterSetReader.h>)
+#  include <FWCore/ParameterSetReader/interface/ParameterSetReader.h> // edm::readPSetsFrom()
+#else
+#  include <FWCore/PythonParameterSet/interface/MakeParameterSets.h> // edm::readPSetsFrom()
+#endif
+
+#include "higgsanalysis/Objects/interface/RecoLepton.h" // RecoLepton
+#include "higgsanalysis/Objects/interface/RecoJet.h" // RecoJet
+#include "higgsanalysis/Objects/interface/RecoJetAK8.h" // RecoJetAK8
+#include "higgsanalysis/Objects/interface/RecoMEt.h" // RecoMEt
+#include "higgsanalysis/Objects/interface/GenJet.h" // GenJet
+#include "higgsanalysis/Objects/interface/GenHadTau.h" // GenHadTau
+#include "higgsanalysis/Objects/interface/ObjectMultiplicity.h" // ObjectMultiplicity
+#include "higgsanalysis/Reader/interface/RecoElectronReader.h" // RecoElectronReader
+#include "higgsanalysis/Reader/interface/RecoMuonReader.h" // RecoMuonReader
+#include "higgsanalysis/Reader/interface/RecoJetReader.h" // RecoJetReader
+#include "higgsanalysis/Reader/interface/RecoJetReaderAK8.h" // RecoJetReaderAK8
+#include "higgsanalysis/Reader/interface/RecoMEtReader.h" // RecoMEtReader
+#include "higgsanalysis/Reader/interface/GenParticleReader.h" // GenParticleReader
+#include "higgsanalysis/Reader/interface/GenHadTauReader.h" // GenHadTauReader
+#include "higgsanalysis/Reader/interface/GenJetReader.h" // GenJetReader
+#include "higgsanalysis/Reader/interface/LHEInfoReader.h" // LHEInfoReader
+#include "higgsanalysis/Reader/interface/LHEParticleReader.h" // LHEParticleReader
+#include "higgsanalysis/Objects/interface/LHEParticle.h" // LHEParticle
+#include "higgsanalysis/Reader/interface/PSWeightReader.h" // PSWeightReader
+#include "higgsanalysis/Reader/interface/ObjectMultiplicityReader.h" // ObjectMultiplicityReader
+#include "higgsanalysis/CommonTools/interface/convert_to_ptrs.h" // convert_to_ptrs
+#include "higgsanalysis/Objects/interface/EventInfo.h" // EventInfo
+#include "higgsanalysis/Reader/interface/EventInfoReader.h" // EventInfoReader
+#include "higgsanalysis/Cleaners/interface/ParticleCollectionCleaner.h" // RecoElectronCollectionCleaner, RecoMuonCollectionCleaner, RecoJetCollectionCleaner
+#include "higgsanalysis/Selector/interface/RecoElectronCollectionSelectorLoose.h" // RecoElectronCollectionSelectorLoose
+#include "higgsanalysis/Selector/interface/RecoElectronCollectionSelectorFakeable.h" // RecoElectronCollectionSelectorFakeable
+#include "higgsanalysis/Selector/interface/RecoElectronCollectionSelectorTight.h" // RecoElectronCollectionSelectorTight
+#include "higgsanalysis/Selector/interface/RecoMuonCollectionSelectorLoose.h" // RecoMuonCollectionSelectorLoose
+#include "higgsanalysis/Selector/interface/RecoMuonCollectionSelectorFakeable.h" // RecoMuonCollectionSelectorFakeable
+#include "higgsanalysis/Selector/interface/RecoMuonCollectionSelectorTight.h" // RecoMuonCollectionSelectorTight
+#include "higgsanalysis/Selector/interface/RecoJetCollectionSelector.h" // RecoJetCollectionSelector
+#include "higgsanalysis/Selector/interface/RecoJetCollectionSelectorBtag.h" // RecoJetCollectionSelectorBtagLoose, RecoJetCollectionSelectorBtagMedium
+#include "higgsanalysis/Selector/interface/RunLumiEventSelector.h" // RunLumiEventSelector
+#include "higgsanalysis/CommonTools/interface/CutFlowTableHistManager.h" // CutFlowTableHistManager
+//#include "/interface/WeightHistManager.h" // WeightHistManager
+#include "higgsanalysis/CommonTools/interface/leptonTypes.h" // getLeptonType, kElectron, kMuon
+#include "higgsanalysis/Objects/interface/analysisAuxFunctions.h" // getBTagWeight_option, getHadTau_genPdgId, isHigherPt, isMatched, pileupJetID
+#include "higgsanalysis/CommonTools/interface/cutFlowTable.h" // cutFlowTableType
+#include "higgsanalysis/CommonTools/interface/TTreeWrapper.h" // TTreeWrapper
+//#include "/interface/hltFilter.h" // hltFilter()
+#include "higgsanalysis/Objects/interface/RecoVertex.h" // RecoVertex
+#include "higgsanalysis/Reader/interface/RecoVertexReader.h" // RecoVertexReader
+#include "higgsanalysis/Selector/interface/RecoJetCollectionSelectorAK8.h" // RecoJetSelectorAK8
+#include "higgsanalysis/haato4b/interface/setgenmatchingFlag.h"
+#include "higgsanalysis/haato4b/interface/genbquark.h"
+#include "higgsanalysis/haato4b/interface/setJetBtagScore.h"
+#include "higgsanalysis/CommonTools/interface/sysUncertOptions.h"
+#include <TBenchmark.h> // TBenchmark
+#include <TString.h> // TString, Form
+#include <TError.h> // gErrorAbortLevel, kError
+#include <TRandom3.h> // TRandom3
+#include <TROOT.h> // TROOT
+#include <TH1.h>
+#include <TH2.h>
+#include <TProfile.h>
+#include <boost/algorithm/string/predicate.hpp> // boost::starts_with()
+
+#include <iostream> // std::cerr, std::fixed
+#include <iomanip> // std::setprecision(), std::setw()
+#include <string> // std::string
+#include <vector> // std::vector<>
+#include <cstdlib> // EXIT_SUCCESS, EXIT_FAILURE
+#include <fstream> // std::ofstream
+#include <assert.h> // assert
+
+typedef math::PtEtaPhiMLorentzVector LV;
+typedef std::vector<std::string> vstring;
+typedef std::vector<double> vdouble;
+
+enum { kFR_disabled, kFR_enabled };
+
+const int hadTauSelection_veto_antiElectron = -1; // not applied
+const int hadTauSelection_veto_antiMuon = -1; // not applied
+
+const double higgsBosonMass = 125.;
+
+// CV: limit number of jets considered for building JPAs to avoid that a single noisy event can increase the number of JPAs by a lot
+//    (for resolved events, the numbers of JPAs scales like numJets**4, while for boosted events, the number of JPA scales like numJets**2)
+const int max_numJets = 50;
+
+int main(int argc, char* argv[])
+{
+//--- throw an exception in case ROOT encounters an error
+  gErrorAbortLevel = kError;
+
+//--- stop ROOT from keeping track of all histograms
+  TH1::AddDirectory(false);
+
+//--- parse command-line arguments
+  if ( argc < 2 ) {
+    std::cout << "Usage: " << argv[0] << " [parameters.py]" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  std::cout << "<analyze_hh_bb1l>:" << std::endl;
+
+//--- keep track of time it takes the macro to execute
+  TBenchmark clock;
+  clock.Start("analyze_hh_bb1l");
+  std::cout << "******** " << std::endl;
+//--- read python configuration parameters
+  if ( !edm::readPSetsFrom(argv[1])->existsAs<edm::ParameterSet>("process") )
+    throw cms::Exception("analyze_hh_bb1l")
+      << "No ParameterSet 'process' found in configuration file = " << argv[1] << " !!\n";
+  std::cout << "******** " << std::endl;
+  edm::ParameterSet cfg = edm::readPSetsFrom(argv[1])->getParameter<edm::ParameterSet>("process");
+  std::cout << "******** " << std::endl;
+
+  edm::ParameterSet cfg_analyze = cfg.getParameter<edm::ParameterSet>("analyze_hh_bb1l");
+
+  std::string treeName = cfg_analyze.getParameter<std::string>("treeName");
+
+  std::string process_string = cfg_analyze.getParameter<std::string>("process");
+  std::string era_string = cfg_analyze.getParameter<std::string>("era");
+  const Era era = get_era(era_string);
+
+  const std::string electronSelection_string = cfg_analyze.getParameter<std::string>("electronSelection");
+  const std::string muonSelection_string     = cfg_analyze.getParameter<std::string>("muonSelection");
+  std::cout << "electronSelection_string = " << electronSelection_string << "\n"
+               "muonSelection_string     = " << muonSelection_string     << '\n'
+  ;
+  const int electronSelection = get_selection(electronSelection_string);
+  const int muonSelection     = get_selection(muonSelection_string);
+
+  const std::string apply_pileupJetID_string = cfg_analyze.getParameter<std::string>("apply_pileupJetID");
+  const pileupJetID apply_pileupJetID = get_pileupJetID(apply_pileupJetID_string);
+
+  const double lep_mva_cut_mu = cfg_analyze.getParameter<double>("lep_mva_cut_mu");
+  const double lep_mva_cut_e  = cfg_analyze.getParameter<double>("lep_mva_cut_e");
+  const std::string lep_mva_wp = cfg_analyze.getParameter<std::string>("lep_mva_wp");
+
+  std::string central_or_shift_main = cfg_analyze.getParameter<std::string>("central_or_shift");
+  std::vector<std::string> central_or_shifts_local = cfg_analyze.getParameter<std::vector<std::string>>("central_or_shifts_local");
+
+  if(! central_or_shifts_local.empty())
+  {
+    assert(central_or_shift_main == "central");
+    assert(std::find(central_or_shifts_local.cbegin(), central_or_shifts_local.cend(), "central") != central_or_shifts_local.cend());
+  }
+  else
+  {
+    central_or_shifts_local = { central_or_shift_main };
+  }
+  std::cout << "******** " << std::endl;
+  bool isDEBUG = cfg_analyze.getParameter<bool>("isDEBUG");
+  if ( isDEBUG ) std::cout << "Warning: DEBUG mode enabled -> trigger selection will not be applied for data !!" << std::endl;
+
+  bool isMC = cfg_analyze.getParameter<bool>("isMC");
+  const bool useNonNominal = cfg_analyze.getParameter<bool>("useNonNominal");
+  const bool useNonNominal_jetmet = useNonNominal || ! isMC;
+
+  const std::vector<std::string> disable_ak8_corr = cfg_analyze.getParameter<std::vector<std::string>>("disable_ak8_corr");
+
+  checkOptionValidity(central_or_shift_main, isMC);
+  //const int met_option      = useNonNominal_jetmet ? kJetMET_central_nonNominal : getMET_option(central_or_shift_main, isMC);
+  const int jetPt_option    = useNonNominal_jetmet ? kJetMET_central_nonNominal : getJet_option(central_or_shift_main, isMC);
+  const int fatJetPt_option = useNonNominal_jetmet ? kFatJet_central_nonNominal : getFatJet_option(central_or_shift_main, isMC);
+  const int hadTauPt_option = useNonNominal_jetmet ? kHadTauPt_uncorrected      : getHadTauPt_option(central_or_shift_main);
+  const int ignore_ak8_sys = getCorrectionCode(disable_ak8_corr);
+
+  std::cout
+    << "central_or_shift = "    << central_or_shift_main << "\n"
+       " -> hadTauPt_option = " << hadTauPt_option       << "\n"
+       " -> jetPt_option    = " << jetPt_option          << "\n"
+       "--> fatJetPt_option = " << fatJetPt_option       << "\n"
+       "--> ignore_ak8_sys  = " << ignore_ak8_sys        << '\n'
+  ;
+
+  std::string branchName_electrons = cfg_analyze.getParameter<std::string>("branchName_electrons");
+  std::string branchName_muons = cfg_analyze.getParameter<std::string>("branchName_muons");
+  std::string branchName_jets_ak4 = cfg_analyze.getParameter<std::string>("branchName_jets_ak4");
+  std::string branchName_jets_ak8 = cfg_analyze.getParameter<std::string>("branchName_jets_ak8");
+  std::string branchName_subjets_ak8 = cfg_analyze.getParameter<std::string>("branchName_subjets_ak8");
+  std::string branchName_met = cfg_analyze.getParameter<std::string>("branchName_met");
+  std::string branchName_vertex = cfg_analyze.getParameter<std::string>("branchName_vertex");
+
+  bool jetCleaningByIndex = cfg_analyze.getParameter<bool>("jetCleaningByIndex");
+  std::string selEventsFileName_input = cfg_analyze.getParameter<std::string>("selEventsFileName_input");
+  std::cout << "selEventsFileName_input = " << selEventsFileName_input << std::endl;
+
+  RunLumiEventSelector* run_lumi_eventSelector = 0;
+  if ( selEventsFileName_input != "" ) {
+    edm::ParameterSet cfg_runLumiEventSelector;
+    cfg_runLumiEventSelector.addParameter<std::string>("inputFileName", selEventsFileName_input);
+    cfg_runLumiEventSelector.addParameter<std::string>("separator", ":");
+    run_lumi_eventSelector = new RunLumiEventSelector(cfg_runLumiEventSelector);
+  }
+
+  std::string selEventsFileName_output = cfg_analyze.getParameter<std::string>("selEventsFileName_output");
+  std::cout << "selEventsFileName_output = " << selEventsFileName_output << std::endl;
+
+  fwlite::InputSource inputFiles(cfg);
+  int maxEvents = inputFiles.maxEvents();
+  std::cout << " maxEvents = " << maxEvents << std::endl;
+  unsigned reportEvery = inputFiles.reportAfter();
+
+  fwlite::OutputFiles outputFile(cfg);
+  fwlite::TFileService fs = fwlite::TFileService(outputFile.file().data());
+  TH1F* h = nullptr;
+  TTreeWrapper* inputTree = new TTreeWrapper(treeName.data(), inputFiles.files(), maxEvents);
+  std::cout << "Loaded " << inputTree->getFileCount() << " file(s)\n";
+
+//--- prepare sync Ntuple
+
+  RecoVertex vertex;
+  RecoVertexReader vertexReader(&vertex, branchName_vertex);
+  inputTree -> registerReader(&vertexReader);
+
+  const int minLeptonSelection = std::min(electronSelection, muonSelection);
+  bool redoGenMatching = cfg_analyze.getParameter<bool>("redoGenMatching");
+  const bool readGenObjects = isMC && !redoGenMatching;
+  bool useAssocJetBtag = cfg_analyze.getParameter<bool>("useAssocJetBtag");
+
+  RecoJetReader* jetReaderAK4 = new RecoJetReader(era, isMC, branchName_jets_ak4, readGenObjects);
+  inputTree->registerReader(jetReaderAK4);
+  RecoJetCollectionCleaner jetCleanerAK4_dR04(0.4, isDEBUG);
+  RecoJetCollectionCleaner jetCleanerAK4_byIndex(isDEBUG);
+  RecoJetCollectionCleaner jetCleanerAK4_dR08(0.8, isDEBUG);
+  RecoJetCollectionCleaner jetCleanerAK4_dR12(1.2, isDEBUG);
+  RecoJetCollectionSelector jetSelectorAK4_wPileupJetId(era, -1, isDEBUG);
+  jetSelectorAK4_wPileupJetId.getSelector().set_pileupJetId(apply_pileupJetID);
+  RecoJetCollectionSelector jetSelectorAK4_woPileupJetId(era, -1, isDEBUG);
+  jetSelectorAK4_woPileupJetId.getSelector().set_pileupJetId(pileupJetID::kPileupJetID_disabled);
+  RecoJetCollectionSelectorBtagLoose jetSelectorAK4_bTagLoose(era, -1, isDEBUG);
+  jetSelectorAK4_bTagLoose.getSelector().set_pileupJetId(apply_pileupJetID);
+  RecoJetCollectionSelectorBtagMedium jetSelectorAK4_bTagMedium(era, -1, isDEBUG);
+  jetSelectorAK4_bTagMedium.getSelector().set_pileupJetId(apply_pileupJetID);
+
+  GenParticleReader* genParticle = new GenParticleReader();
+  inputTree->registerReader(genParticle);
+
+  RecoJetReaderAK8* jetReaderAK8 = new RecoJetReaderAK8(era, isMC, branchName_jets_ak8, branchName_subjets_ak8);
+
+  inputTree->registerReader(jetReaderAK8);
+  RecoJetCollectionCleanerAK8 jetCleanerAK8_dR08(0.8, isDEBUG);
+  RecoJetCollectionCleanerAK8 jetCleanerAK8_dR12(1.2, isDEBUG);
+  RecoJetCollectionCleanerAK8 jetCleanerAK8_dR16(1.6, isDEBUG);
+  RecoJetCollectionSelectorAK8 jetSelectorAK8(era);
+
+  RecoMuonReader* muonReader = new RecoMuonReader(era, branchName_muons, isMC);
+  inputTree->registerReader(muonReader);
+  RecoMuonCollectionSelectorLoose preselMuonSelector(era, -1, isDEBUG);
+  RecoMuonCollectionSelectorFakeable fakeableMuonSelector_default(era, -1, isDEBUG);
+  RecoMuonCollectionSelectorFakeable fakeableMuonSelector_hh_multilepton(era, -1, isDEBUG);
+  RecoMuonCollectionSelectorTight tightMuonSelector(era, -1, isDEBUG);
+  muonReader->set_mvaTTH_wp(lep_mva_cut_mu);
+
+  RecoElectronReader* electronReader = new RecoElectronReader(era, branchName_electrons, isMC);
+  inputTree->registerReader(electronReader);
+  RecoElectronCollectionCleaner electronCleaner(0.3, isDEBUG);
+  RecoElectronCollectionSelectorLoose preselElectronSelector(era, -1, isDEBUG);
+  RecoElectronCollectionSelectorFakeable fakeableElectronSelector_default(era, -1, isDEBUG);
+  RecoElectronCollectionSelectorFakeable fakeableElectronSelector_hh_multilepton(era, -1, isDEBUG);
+  RecoElectronCollectionSelectorTight tightElectronSelector(era, -1, isDEBUG);
+  electronReader->set_mvaTTH_wp(lep_mva_cut_e);
+
+  
+//--- declare missing transverse energy
+  AnalysisConfig analysisConfig("HH->bbWW", cfg_analyze);
+  EventInfo eventInfo(analysisConfig);
+
+  /*  RecoMEtReader* metReader = new RecoMEtReader(era, isMC, branchName_met);
+  metReader->setMEt_central_or_shift(met_option);
+  metReader->set_phiModulationCorrDetails(&eventInfo, &vertex);
+  inputTree->registerReader(metReader);
+  */
+
+  int analyzedEntries = 0;
+  int selectedEntries = 0;
+  double selectedEntries_weighted = 0.;
+  std::map<std::string, int> selectedEntries_byGenMatchType; // key = process_and_genMatch
+  std::map<std::string, std::map<std::string, double>> selectedEntries_weighted_byGenMatchType; // key = central_or_shift, process_and_genMatch
+  TH1* histogram_analyzedEntries = fs.make<TH1D>("analyzedEntries", "analyzedEntries", 1, -0.5, +0.5);
+  TH1* histogram_selectedEntries = fs.make<TH1D>("selectedEntries", "selectedEntries", 1, -0.5, +0.5);
+  cutFlowTableType cutFlowTable;
+  std::string histogramDir = cfg_analyze.getParameter<std::string>("histogramDir");
+  const edm::ParameterSet cutFlowTableCfg = makeHistManager_cfg(
+    process_string, Form("%s/sel/cutFlow", histogramDir.data()), era_string, central_or_shift_main
+  );
+  const std::vector<std::string> cuts = {
+    "Initial",
+    ">= 1 presel leptons",
+    ">= 1 sel leptons",
+    "electron pT > 32 GeV / muon pT > 25 GeV",
+    "<= 1 tight leptons",
+    "m(ll) > 12 GeV",
+    "Z-boson mass veto",
+    ">= 1 AK8 jets from H->aa->4b"
+  };
+  CutFlowTableHistManager * cutFlowHistManager = new CutFlowTableHistManager(cutFlowTableCfg, cuts);
+  cutFlowHistManager->bookHistograms(fs);
+
+  const edm::ParameterSet cutFlowTableCfg_AK8 = makeHistManager_cfg(
+        process_string, Form("%s/sel/cutFlowAK8", histogramDir.data()), era_string, 
+        central_or_shift_main
+    );
+  const std::vector<std::string> cutsAK8 = {
+    "Initial",
+    "genmatching",
+    "pt >minpt",
+    "eta<maxeta",
+    "softdrop",
+    "btag"
+  };
+
+  CutFlowTableHistManager * cutFlowHistManagerAK8 = new CutFlowTableHistManager(cutFlowTableCfg_AK8, cutsAK8);
+  cutFlowHistManagerAK8->bookHistograms(fs);
+  jetSelectorAK8.getSelector().setcutFlowTable(cutFlowHistManagerAK8);
+  while ( inputTree->hasNextEvent() && (! run_lumi_eventSelector || (run_lumi_eventSelector && ! run_lumi_eventSelector -> areWeDone())) ) 
+  {
+    if ( inputTree -> canReport(reportEvery) ) 
+    {
+      std::cout << "processing Entry " << inputTree -> getCurrentMaxEventIdx()
+                << " or " << inputTree -> getCurrentEventIdx() << " entry in #"
+                << (inputTree -> getProcessedFileCount() - 1)
+        //<< " (" << eventInfo
+                << ") file (" << selectedEntries << " Entries selected)\n";
+    }
+    ++analyzedEntries;
+    histogram_analyzedEntries->Fill(0.);
+
+    if ( isDEBUG ) 
+    {
+      std::cout << "event #" << inputTree -> getCurrentMaxEventIdx() << ' ' << eventInfo << '\n';
+    }
+
+    if ( run_lumi_eventSelector && !(*run_lumi_eventSelector)(eventInfo.run, eventInfo.lumi, eventInfo.event) ) continue;
+    cutFlowTable.update("run:ls:event selection", 1);
+    cutFlowHistManager->fillHistograms("Initial", 1);
+
+    if ( run_lumi_eventSelector ) 
+    {
+      std::cout << "processing Entry #" << inputTree->getCumulativeMaxEventCount() << ": " << eventInfo << std::endl;
+      if ( inputTree -> isOpen() ) 
+      {
+        std::cout << "input File = " << inputTree->getCurrentFileName() << std::endl;
+      }
+    }
+//--- build collections of electrons, muons and hadronic taus;
+//    resolve overlaps in order of priority: muon, electron,
+    const std::vector<RecoJet> jets_ak4 = jetReaderAK4->read();         
+    const std::vector<const RecoJet*> jet_ptrs_ak4 = convert_to_ptrs(jets_ak4);  
+    std::vector<RecoMuon> muons = muonReader->read();
+    setJetBtagScore(muons, jets_ak4);
+    const std::vector<const RecoMuon*> muon_ptrs = convert_to_ptrs(muons);
+    const std::vector<const RecoMuon*> cleanedMuons = muon_ptrs; // CV: no cleaning needed for muons, as they have the highest priority in the overlap removal
+    const std::vector<const RecoMuon*> preselMuons = preselMuonSelector(cleanedMuons, isHigherConePt);
+    const std::vector<const RecoMuon*> fakeableMuons = fakeableMuonSelector_default(preselMuons, isHigherConePt)
+    ;
+    const std::vector<const RecoMuon*> tightMuons = tightMuonSelector(fakeableMuons, isHigherConePt);
+    if ( isDEBUG || run_lumi_eventSelector ) 
+    {
+      printCollection("preselMuons",   preselMuons);
+      printCollection("fakeableMuons", fakeableMuons);
+      printCollection("tightMuons",    tightMuons);
+    }
+
+    std::vector<RecoElectron> electrons = electronReader->read();
+    setJetBtagScore(electrons, jets_ak4);
+    const std::vector<const RecoElectron*> electron_ptrs = convert_to_ptrs(electrons);
+    const std::vector<const RecoElectron*> cleanedElectrons = electronCleaner(electron_ptrs, preselMuons);
+    const std::vector<const RecoElectron*> preselElectrons = preselElectronSelector(cleanedElectrons, isHigherConePt);
+    const std::vector<const RecoElectron*> preselElectronsUncleaned = preselElectronSelector(electron_ptrs, isHigherConePt);
+    const std::vector<const RecoElectron*> fakeableElectrons = lep_mva_wp == "hh_multilepton" ?
+      fakeableElectronSelector_hh_multilepton(preselElectrons, isHigherConePt) :
+      fakeableElectronSelector_default(preselElectrons, isHigherConePt)
+    ;
+    const std::vector<const RecoElectron*> tightElectrons = tightElectronSelector(fakeableElectrons, isHigherConePt);
+    if ( isDEBUG || run_lumi_eventSelector ) 
+    {
+      printCollection("preselElectrons",   preselElectrons);
+      printCollection("preselElectronsUncleaned", preselElectronsUncleaned);
+      printCollection("fakeableElectrons", fakeableElectrons);
+      printCollection("tightElectrons",    tightElectrons);
+    }
+
+    const std::vector<const RecoLepton*> preselLeptonsFull = mergeLeptonCollections(preselElectrons, preselMuons, isHigherConePt);
+    const std::vector<const RecoLepton*> preselLeptonsFullUncleaned = mergeLeptonCollections(preselElectronsUncleaned, preselMuons, isHigherConePt);
+    const std::vector<const RecoLepton*> fakeableLeptonsFull = mergeLeptonCollections(fakeableElectrons, fakeableMuons, isHigherConePt);
+    const std::vector<const RecoLepton*> tightLeptonsFull = mergeLeptonCollections(tightElectrons, tightMuons, isHigherConePt);
+
+    const std::vector<const RecoLepton*> preselLeptons = pickFirstNobjects(preselLeptonsFull, 1);
+    const std::vector<const RecoLepton*> fakeableLeptons = pickFirstNobjects(fakeableLeptonsFull, 1);
+    const std::vector<const RecoLepton*> tightLeptons = getIntersection(fakeableLeptons, tightLeptonsFull, isHigherConePt);
+    const std::vector<const RecoLepton*> vetoLeptons = tightLeptonsFull;
+
+    std::vector<const RecoLepton*> selLeptons;
+    std::vector<const RecoMuon*> selMuons;
+
+  std::vector<const RecoElectron*> selElectrons;
+    if ( electronSelection == muonSelection ) 
+    {
+      // for SR, flip region and fake CR
+      // doesn't matter if we supply electronSelection or muonSelection here
+      selLeptons = selectObjects(muonSelection, preselLeptons, fakeableLeptons, tightLeptons);
+    } 
+    else 
+    {
+      // for MC closure
+      // make sure that neither electron nor muon selections are loose
+      assert(electronSelection != kLoose && muonSelection != kLoose);
+      const std::vector<const RecoMuon*> selMuons_tmp = selectObjects(muonSelection, preselMuons, fakeableMuons, tightMuons);
+      const std::vector<const RecoElectron*> selElectrons_tmp = selectObjects(electronSelection, preselElectrons, fakeableElectrons, tightElectrons);
+      const std::vector<const RecoLepton*> selLeptons_tmp = mergeLeptonCollections(selElectrons_tmp, selMuons_tmp, isHigherConePt);
+      selLeptons = getIntersection(fakeableLeptons, selLeptons_tmp, isHigherConePt);
+    }
+    selMuons = getIntersection(preselMuons, selLeptons, isHigherConePt);
+    selElectrons = getIntersection(preselElectrons, selLeptons, isHigherConePt);
+
+    if ( isDEBUG || run_lumi_eventSelector ) 
+    {
+      printCollection("selMuons", selMuons);
+      printCollection("selElectrons", selElectrons);
+      printCollection("selLeptons", selLeptons);
+    }
+
+    const std::vector<const RecoJet*> tmpJetsAK4 = jetCleanerAK4_byIndex(jet_ptrs_ak4, fakeableLeptons);
+   std::vector<const RecoJet*> cleanedJetsAK4_wrtLeptons = pickFirstNobjects(tmpJetsAK4, max_numJets);
+    const std::vector<const RecoJet*> selJetsAK4 = jetSelectorAK4_wPileupJetId(cleanedJetsAK4_wrtLeptons, isHigherPt);
+    const std::vector<const RecoJet*> selBJetsAK4_loose = jetSelectorAK4_bTagLoose(cleanedJetsAK4_wrtLeptons, isHigherPt);
+    const std::vector<const RecoJet*> selBJetsAK4_medium = jetSelectorAK4_bTagMedium(cleanedJetsAK4_wrtLeptons, isHigherPt);
+
+    //const RecoMEt met = metReader->read();
+    //const Particle::LorentzVector& metP4 = met.p4();
+
+//--- build collections of generator level particles (after some cuts are applied, to save computing time)
+    // require at least one lepton passing loose preselection criteria
+    /*if ( !(preselLeptonsFull.size() >= 1) ) 
+    {
+      if ( run_lumi_eventSelector ) 
+      {
+        std::cout << "event " << eventInfo.str() << " FAILS preselLeptons selection." << std::endl;
+        printCollection("preselLeptons", preselLeptonsFull);
+      }
+      continue;
+    }
+    cutFlowTable.update(">= 1 presel leptons", evtWeightRecorder.get(central_or_shift_main));
+    cutFlowHistManager->fillHistograms(">= 1 presel leptons", evtWeightRecorder.get(central_or_shift_main));
+
+    // require at least one lepton passing fakeable or tight selection criteria
+    // (fakeable lepton selection applied in fake background control region,
+    //  tight lepton selection applied in signal region)
+    if ( !(selLeptons.size() >= 1) ) 
+    {
+      if ( run_lumi_eventSelector ) 
+      {
+        std::cout << "event " << eventInfo.str() << " FAILS selLeptons selection." << std::endl;
+        printCollection("selLeptons", selLeptons);
+      }
+      continue;
+    }
+    cutFlowTable.update(">= 1 sel leptons", evtWeightRecorder.get(central_or_shift_main));
+    cutFlowHistManager->fillHistograms(">= 1 sel leptons", evtWeightRecorder.get(central_or_shift_main));
+    const RecoLepton* selLepton = selLeptons[0];
+    const Particle::LorentzVector& selLeptonP4 = selLepton->cone_p4();
+    int selLepton_type = getLeptonType(selLepton->pdgId());
+    const double minPt_electron = 32.;
+    const double minPt_muon = 25.;
+    if ( !((selLepton->is_electron() && selLepton->cone_pt() > minPt_electron) || (selLepton->is_muon() && selLepton->cone_pt() > minPt_muon)) ) 
+    {
+      if ( run_lumi_eventSelector ) 
+      {
+        std::cout << "event " << eventInfo.str() << " FAILS lepton pT selection." << std::endl;
+        if      ( selLepton->is_electron() ) std::cout << " (selElectron pT = " << selLepton->pt() << ", minPt_electron = " << minPt_electron << ")" << std::endl;
+        else if ( selLepton->is_muon()     ) std::cout << " (selMuon pT = " << selLepton->pt() << ", minPt_muon = " << minPt_muon << ")" << std::endl;
+        else assert(0);
+      }
+      continue;
+    }
+    cutFlowTable.update(Form("electron pT > %0.0f GeV / muon pT > %0.0f GeV", minPt_electron, minPt_muon), evtWeightRecorder.get(central_or_shift_main));
+    cutFlowHistManager->fillHistograms("electron pT > 32 GeV / muon pT > 25 GeV", evtWeightRecorder.get(central_or_shift_main));
+
+    // require exactly one lepton passing tight selection criteria, to avoid overlap with other channels
+    if ( !(vetoLeptons.size() <= 1) ) 
+    {
+      if ( run_lumi_eventSelector ) 
+      {
+        std::cout << "event " << eventInfo.str() << " FAILS tightLeptons selection." << std::endl;
+        printCollection("vetoLeptons", vetoLeptons);
+      }
+      continue;
+    }
+    cutFlowTable.update("<= 1 tight leptons", evtWeightRecorder.get(central_or_shift_main));
+    cutFlowHistManager->fillHistograms("<= 1 tight leptons", evtWeightRecorder.get(central_or_shift_main));
+
+    const bool failsLowMassVeto = isfailsLowMassVeto(preselLeptonsFullUncleaned);
+    if ( failsLowMassVeto ) 
+    {
+      if ( run_lumi_eventSelector ) 
+      {
+	std::cout << "event " << eventInfo.str() << " FAILS low mass lepton pair veto." << std::endl;
+      }
+      continue;
+    }
+    cutFlowTable.update("m(ll) > 12 GeV", evtWeightRecorder.get(central_or_shift_main));
+    cutFlowHistManager->fillHistograms("m(ll) > 12 GeV", evtWeightRecorder.get(central_or_shift_main));
+
+    const bool failsZbosonMassVeto = isfailsZbosonMassVeto(preselLeptonsFull);
+    if ( failsZbosonMassVeto ) 
+    {
+      if ( run_lumi_eventSelector ) 
+      {
+	std::cout << "event " << eventInfo.str() << " FAILS Z-boson veto." << std::endl;
+      }
+      continue;
+    }
+    cutFlowTable.update("Z-boson mass veto", evtWeightRecorder.get(central_or_shift_main));
+    cutFlowHistManager->fillHistograms("Z-boson mass veto", evtWeightRecorder.get(central_or_shift_main));*/
+
+    GenParticleCollection genparticles = genParticle->read();
+    const GenParticleCollection genbquarks = find_genbquarks(genparticles);
+    std::vector<RecoJetAK8> jets_ak8 = jetReaderAK8->read();
+    setgenmatchingFlag(jets_ak8, genbquarks);
+    const std::vector<const RecoJetAK8*> jet_ptrs_ak8 = convert_to_ptrs(jets_ak8);
+    // select jets from H->bb decay
+    const std::vector<const RecoJetAK8*> cleanedJetsAK8_wrtLeptons = jetCleanerAK8_dR08(jet_ptrs_ak8, fakeableLeptons);
+    const std::vector<const RecoJetAK8*> selJetsAK8 = jetSelectorAK8(jet_ptrs_ak8, isHigherPt);
+    if ( !(selJetsAK8.size() >=1) ) continue;
+    cutFlowTable.update(">= 1 AK8 jets from H->aa->4b", 1);
+    cutFlowHistManager->fillHistograms(">= 1 AK8 jets from H->aa->4b", 1);
+
+    histogram_selectedEntries->Fill(0.);
+  }
+  std::cout << "max num. Entries = " << inputTree -> getCumulativeMaxEventCount()
+            << " (limited by " << maxEvents << ") processed in "
+            << inputTree -> getProcessedFileCount() << " file(s) (out of "
+            << inputTree -> getFileCount() << ")\n"
+            << " analyzed = " << analyzedEntries << '\n'
+            << " selected = " << selectedEntries << " (weighted = " << selectedEntries_weighted << ")\n\n"
+            << "cut-flow table" << std::endl;
+  cutFlowTable.print(std::cout);
+  std::cout << std::endl;
+  std::cout << "sel. Entries by gen. matching:" << std::endl;
+
+//--- manually write histograms to output file
+  fs.file().cd();
+  HistManagerBase::writeHistograms();
+//--- memory clean-up
+
+  delete run_lumi_eventSelector;
+  delete muonReader;
+  delete electronReader;
+//delete jetReaderAK4;
+// delete jetReaderAK8;
+//delete metReader;
+  delete cutFlowHistManager;
+  delete inputTree;
+  delete h;
+
+  clock.Show("analyze_hh_bb1l");
+
+  return EXIT_SUCCESS;
+}
